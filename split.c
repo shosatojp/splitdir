@@ -49,29 +49,38 @@ void walk(const char* dirname, int (*fn)(const char* path, struct dirent*, struc
     }
 }
 
+FILE* cfd = NULL;
+
 int statfile(const char* path, struct dirent* dp, struct options* opt) {
     static char out_path[PATH_MAX];
     struct stat sb;
+    if (path && dp) {
+        if (~stat(path, &sb)) {
+            if (!cfd) {
+                sprintf(out_path, opt->pattern, opt->page);
+                cfd = fopen(out_path, "w");
+            }
+            if (opt->max_size - opt->total_size > sb.st_size) {
+                opt->total_size += sb.st_size;
+            } else {
+                fclose(cfd);
+                printf("page %d: %ld\n", opt->page, opt->total_size);
+                opt->page++;
+                opt->total_size = sb.st_size;
+                sprintf(out_path, opt->pattern, opt->page);
+                cfd = fopen(out_path, "w");
+            }
 
-    if (~stat(path, &sb)) {
-        if (opt->max_size - opt->total_size > sb.st_size) {
-            opt->total_size += sb.st_size;
-        } else {
-            printf("page %d: %ld\n", opt->page, opt->total_size);
-            opt->page++;
-            opt->total_size = 0;
+            char buf[PATH_MAX + 3];
+            for (char* b = opt->base; *b && *path && *b == *path; b++, path++)
+                ;
+            sprintf(buf, "%s\n", path);
+            fwrite(buf, strlen(buf), 1, cfd);
         }
-
-        sprintf(out_path, opt->pattern, opt->page);
-        FILE* fd = fopen(out_path, "a");
-
-        char buf[PATH_MAX + 3];
-        for (char* b = opt->base; *b && *path && *b == *path; b++, path++)
-            ;
-        sprintf(buf, "%s\n", path);
-
-        fwrite(buf, strlen(buf), 1, fd);
-        fclose(fd);
+    } else {
+        if (cfd)
+            fclose(cfd);
+        printf("page %d: %ld\n", opt->page, opt->total_size);
     }
 }
 
@@ -152,4 +161,5 @@ int main(int argc, char* argv[]) {
             walk(abspath, statfile, &opt);
         }
     }
+    statfile(NULL, NULL, &opt);
 }

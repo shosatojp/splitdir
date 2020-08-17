@@ -30,9 +30,9 @@ void walk(const char* dirname, int (*fn)(const char* path, struct dirent*, struc
         if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
             // ignore . ..
             continue;
-        } else if (*dp->d_name == '.') {
-            // ignore dotfile
-            continue;
+            // } else if (*dp->d_name == '.') {
+            //     // ignore dotfile
+            //     continue;
         }
 
         // create fullpath

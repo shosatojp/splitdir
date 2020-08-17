@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <getopt.h>
 #include <linux/limits.h>
 #include <math.h>
@@ -19,7 +20,7 @@ struct options {
 void walk(const char* dirname, int (*fn)(const char* path, struct dirent*, struct options*), struct options* opt) {
     DIR* dir = opendir(dirname);
     if (!dir) {
-        printf("failed to open directory: %s\n", dirname);
+        printf("failed to open directory (%d): %s\n", errno, dirname);
         return;
     }
 
@@ -47,6 +48,8 @@ void walk(const char* dirname, int (*fn)(const char* path, struct dirent*, struc
                 break;
         }
     }
+
+    closedir(dir);
 }
 
 FILE* cfd = NULL;
